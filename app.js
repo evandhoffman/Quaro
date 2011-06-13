@@ -1,3 +1,4 @@
+// http://dailyjs.com/2010/11/15/node-tutorial-3/
 
 /**
  * Module dependencies.
@@ -36,16 +37,25 @@ app.get('/', function(req, res){
   });
 });
 
+// List
 app.get('/question.:format', function(req, res) {
+	var questions = 
 });
 
+// Create
 app.post('/question.:format?', function(req, res) {
 });
 
+// Read
 app.get('/question/:id.:format?', function(req, res) {
 });
 
-app.get('/question.:format', function(req, res) {
+// Update
+app.put('/question/:id.:format?', function(req, res) {
+});
+
+// Delete
+app.del('/question/:id.:format?', function(req, res) {
 });
 
 app.listen(3000);
