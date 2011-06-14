@@ -6,7 +6,12 @@
 
 var express = require('express');
 
+var eyes = require('eyes');
+
 var app = module.exports = express.createServer();
+
+var mongo = require('mongoskin');
+var db = mongo.db('localhost:27017/questions');
 
 // Configuration
 
@@ -38,8 +43,17 @@ app.get('/', function(req, res){
 });
 
 // List
-app.get('/question.:format', function(req, res) {
-	var questions = 
+app.get('/questions', function(req, res) {
+	db.collection('questions').find().toArray(function(err, results) {
+		if (err) new Error(err);
+	//	eyes.inspect(results);
+		res.render('list', {
+			title: 'Question List',
+			questions: (results)
+		
+		});
+	});
+			
 });
 
 // Create
