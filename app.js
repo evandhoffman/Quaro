@@ -1,4 +1,5 @@
-// http://dailyjs.com/2010/11/15/node-tutorial-3/
+// Node tutorial: http://dailyjs.com/2010/11/15/node-tutorial-3/
+// Jade basics: http://www.screenr.com/vV0
 
 /**
  * Module dependencies.
