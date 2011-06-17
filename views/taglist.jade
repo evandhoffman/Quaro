@@ -1,0 +1,9 @@
+h1= title
+p Welcome to #{title}
+ul
+- each question in questions
+	li= question.body
+	Asked by #{question.author} on #{question.date}. Answers: #{question.answers.length}. Votes: #{question.votes}. Tags: 
+	- each tag in question.tags
+		a(href='/tags/#{tag}')= tag
+		,

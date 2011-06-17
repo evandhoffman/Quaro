@@ -57,6 +57,20 @@ app.get('/questions', function(req, res) {
 			
 });
 
+// tagsearch
+app.get('/tags/:tag.:format?', function(req, res) {
+	db.collection('questions').find({tags: req.params.tag}).toArray(function(err, results) {
+		if (err) new Error(err);
+	//	eyes.inspect(results);
+		res.render('taglist', {
+			title: 'Tag List',
+			questions: (results)
+		
+		});
+	});
+			
+});
+
 // Create
 app.post('/question.:format?', function(req, res) {
 });
