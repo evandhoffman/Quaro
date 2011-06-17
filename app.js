@@ -1,5 +1,6 @@
 // Node tutorial: http://dailyjs.com/2010/11/15/node-tutorial-3/
 // Jade basics: http://www.screenr.com/vV0
+// Form stuff: http://japhr.blogspot.com/2010/08/jade-templating.html
 
 /**
  * Module dependencies.
@@ -71,8 +72,22 @@ app.get('/tags/:tag.:format?', function(req, res) {
 			
 });
 
+app.get('/question/new.:format?', function(req, res) {
+	res.render('addquestion', {
+		title: "Add a new question"
+	});
+});
+
 // Create
 app.post('/question.:format?', function(req, res) {
+	// In a POST the params are in the req.body, not req.params.
+//	eyes.inspect(req.body);
+	var ins = { date: new Date(),
+		author: req.body.author, body: req.body.body,
+		tags: [], answers: [], votes: 0 };
+//	res.send(JSON.stringify(ins));
+	db.collection('questions').insert(ins, {});
+	res.end('Added new question: '+req.body.body);
 });
 
 // Read
