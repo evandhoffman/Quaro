@@ -44,6 +44,25 @@ app.get('/', function(req, res){
   });
 });
 
+// Search
+app.get('/search', function(req, res) {
+	var regex = new RegExp(req.query.query, "i");
+	db.collection('questions').find({ $or : 
+		[ 
+			{ body : { $regex : regex}}, 
+			{ tags: { $regex : regex}} 
+		] }).toArray(function(err, results) {
+		if (err) new Error(err);
+	//	eyes.inspect(results);
+		res.render('list', {
+			title: "Search result for "+ req.query.query,
+			questions: (results)
+		
+		});
+	});
+			
+});
+
 // List
 app.get('/questions', function(req, res) {
 	db.collection('questions').find().toArray(function(err, results) {

@@ -1,2 +1,11 @@
 h1= title
 p Welcome to #{title}
+p What do you want to do?
+ul
+	form#search(method="get", action="/search")
+		li 
+			label Enter search terms:
+			input(type="text", name="query")
+			input(type="submit", value="Search")
+		li 
+			a(href="/questions")= "List questions"
