@@ -100,13 +100,27 @@ app.get('/question/new.:format?', function(req, res) {
 	});
 });
 
+var strip = function(str) {
+//	return str.replace(/^(\s*?)(\.+)(\s*?)/,"$2");
+	return str.replace(/^(\s*)(.+)/,"$2").replace(/(([\w]+ )+(\w+))(\s*)/,"$1");
+}
+
 // Create
 app.post('/question.:format?', function(req, res) {
 	// In a POST the params are in the req.body, not req.params.
 //	eyes.inspect(req.body);
+	var tags = [];
+	if (req.body.tags.replace(/\s/,'').length > 0) {
+		tags = req.body.tags.split(',');
+	}
+	for (var i = 0 ; i < tags.length ; i++) {
+		// Strip leading/trailing whitespace from each tag.
+		tags[i] = strip(tags[i]);
+	}
+	eyes.inspect(tags);
 	var ins = { date: new Date(),
 		author: req.body.author, body: req.body.body,
-		tags: [], answers: [], votes: 0 };
+		tags: tags, answers: [], votes: 0 };
 //	res.send(JSON.stringify(ins));
 	db.collection('questions').insert(ins, {});
 	res.end('Added new question: '+req.body.body);

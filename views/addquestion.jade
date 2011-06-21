@@ -1,10 +1,13 @@
 form#question(method="post", action='/question')
 	div
+		label Your Name:
+			input(type="text", name="author")
+	div
 		label Question:
 			input(type="text", name="body")
 	div
-		label Your Name:
-			input(type="text", name="author")
+		label Tags (comma separated):
+			input(type="text", name="tags")
 	div
 		input(type="submit", value="Ask")
 
