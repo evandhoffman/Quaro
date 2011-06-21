@@ -51,7 +51,7 @@ app.get('/search', function(req, res) {
 		[ 
 			{ body : { $regex : regex}}, 
 			{ tags: { $regex : regex}} 
-		] }).toArray(function(err, results) {
+		] }).sort({ votes : -1 }).toArray(function(err, results) {
 		if (err) new Error(err);
 	//	eyes.inspect(results);
 		res.render('list', {
@@ -65,8 +65,11 @@ app.get('/search', function(req, res) {
 
 // List
 app.get('/questions', function(req, res) {
-	db.collection('questions').find().toArray(function(err, results) {
+	db.collection('questions').find().sort().toArray(function(err, results) {
 		if (err) new Error(err);
+		if (results.length == 0) {
+			console.log('no results');
+		}
 	//	eyes.inspect(results);
 		res.render('list', {
 			title: 'Question List',
