@@ -15,6 +15,12 @@ var app = module.exports = express.createServer();
 var mongo = require('mongoskin');
 var db = mongo.db('localhost:27017/questions');
 
+// Helpers
+var strip = function(str) {
+	return str.replace(/^(\s*)((\S+\s*?)*)(\s*)$/,"$2");
+};
+
+
 // Configuration
 
 app.configure(function(){
@@ -36,6 +42,7 @@ app.configure('production', function(){
   app.use(express.errorHandler()); 
 });
 
+
 // Routes
 
 app.get('/', function(req, res){
@@ -43,6 +50,8 @@ app.get('/', function(req, res){
     title: 'Express'
   });
 });
+
+
 
 // Search
 app.get('/search', function(req, res) {
@@ -53,7 +62,6 @@ app.get('/search', function(req, res) {
 			{ tags: { $regex : regex}} 
 		] }).sort({ votes : -1 }).toArray(function(err, results) {
 		if (err) new Error(err);
-	//	eyes.inspect(results);
 		res.render('list', {
 			title: "Search result for "+ req.query.query,
 			questions: (results)
@@ -70,7 +78,6 @@ app.get('/questions', function(req, res) {
 		if (results.length == 0) {
 			console.log('no results');
 		}
-	//	eyes.inspect(results);
 		res.render('list', {
 			title: 'Question List',
 			questions: (results)
@@ -84,9 +91,8 @@ app.get('/questions', function(req, res) {
 app.get('/tags/:tag.:format?', function(req, res) {
 	db.collection('questions').find({tags: req.params.tag}).toArray(function(err, results) {
 		if (err) new Error(err);
-	//	eyes.inspect(results);
-		res.render('taglist', {
-			title: 'Tag List',
+		res.render('list', {
+			title: 'Questions tagged "'+req.params.tag+'"',
 			questions: (results)
 		
 		});
@@ -100,27 +106,26 @@ app.get('/question/new.:format?', function(req, res) {
 	});
 });
 
-var strip = function(str) {
-	return str.replace(/^(\s*)((\S+\s*?)*)(\s*)$/,"$2");
 
-}
 
 // Create
 app.post('/question.:format?', function(req, res) {
 	// In a POST the params are in the req.body, not req.params.
-//	eyes.inspect(req.body);
 	var tags = [];
 	if (req.body.tags.replace(/\s/,'').length > 0) {
 		tags = req.body.tags.split(',');
 	}
-	for (var i = 0 ; i < tags.length ; i++) {
-		// Strip leading/trailing whitespace from each tag.
+	// Strip leading/trailing whitespace from each tag.
+	for (var i = tags.length-1 ; i >= 0 ; i--) { // iterate backwards so splice() works
 		tags[i] = strip(tags[i]);
+		if (tags[i].length == 0) {
+			tags.splice(i,1);
+		}
 	}
-	eyes.inspect(tags);
 	var ins = { date: new Date(),
 		author: req.body.author, body: req.body.body,
-		tags: tags, answers: [], votes: 0 };
+		tags: tags, answers: [], votes: 0
+		};
 //	res.send(JSON.stringify(ins));
 	db.collection('questions').insert(ins, {});
 	res.end('Added new question: '+req.body.body);
