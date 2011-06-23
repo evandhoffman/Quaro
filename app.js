@@ -1,6 +1,8 @@
 // Node tutorial: http://dailyjs.com/2010/11/15/node-tutorial-3/
 // Jade basics: http://www.screenr.com/vV0
 // Form stuff: http://japhr.blogspot.com/2010/08/jade-templating.html
+// findAndModify() syntax in mongoskin: http://groups.google.com/group/node-mongodb-native/browse_thread/thread/01e574c96782359b/c8c44d270135ea2e
+// Session stuff: http://dailyjs.com/2010/12/06/node-tutorial-5/
 
 /**
  * Module dependencies.
@@ -13,9 +15,9 @@ var eyes = require('eyes');
 var app = module.exports = express.createServer();
 
 var mongo = require('mongoskin');
-//var ObjectID = require('mongodb').ObjectID;
 var ObjectID = require('mongodb/lib/mongodb/bson/bson').ObjectID
 var db = mongo.db('localhost:27017/questions');
+var _ = require('underscore');
 
 // Helpers
 var strip = function(str) {
@@ -23,8 +25,15 @@ var strip = function(str) {
 };
 
 var tagify = function(str) {
-	return strip(str).toLowerCase().replace(/'/g,'').replace(/[^a-zA-Z0-9]+/g,'-');
+	return strip(str).toLowerCase().replace(/[^a-zA-Z0-9\s]+/g,'').replace(/[\s]+/g,'-');
 };
+
+var isNumeric = function(str) {
+	if (typeof(str) === 'number') {
+		return true;
+	}
+	return (str === parseInt(str).toString());
+}
 
 
 // Configuration
@@ -69,7 +78,7 @@ app.get('/search', function(req, res) {
 		] }).sort({ votes : -1 }).toArray(function(err, results) {
 		if (err) new Error(err);
 		res.render('list', {
-			title: "Search result for "+ req.query.query,
+			title: "Found "+results.length+ " results for "+ req.query.query,
 			questions: (results)
 		
 		});
@@ -81,11 +90,11 @@ app.get('/search', function(req, res) {
 app.get('/questions', function(req, res) {
 	db.collection('questions').find().sort().toArray(function(err, results) {
 		if (err) new Error(err);
-		if (results.length == 0) {
+		if (results === undefined || results.length == 0) {
 			console.log('no results');
 		}
 		res.render('list', {
-			title: 'Question List',
+			title: 'Found '+results.length+' Questions',
 			questions: (results)
 		
 		});
@@ -98,7 +107,7 @@ app.get('/tags/:tag.:format?', function(req, res) {
 	db.collection('questions').find({tags: req.params.tag}).toArray(function(err, results) {
 		if (err) new Error(err);
 		res.render('list', {
-			title: 'Questions tagged "'+req.params.tag+'"',
+			title: results.length +' questions tagged "'+req.params.tag+'"',
 			questions: (results)
 		
 		});
@@ -122,6 +131,7 @@ app.post('/question.:format?', function(req, res) {
 	if (req.body.tags.replace(/\s/,'').length > 0) {
 		tags = req.body.tags.split(',');
 	}
+
 	// Strip leading/trailing whitespace from each tag.
 	for (var i = tags.length-1 ; i >= 0 ; i--) { // iterate backwards so splice() works
 		tags[i] = tagify(tags[i]);
@@ -132,30 +142,56 @@ app.post('/question.:format?', function(req, res) {
 		}
 	}
 
-	eyes.inspect(tagCount);
-	var ins = { date: new Date(),
-		author: req.body.author, body: req.body.body,
-		tags: tags, tag_count: tagCount,
-		answers: [], votes: 0
-		};
-//	res.send(JSON.stringify(ins));
-	db.collection('questions').insert(ins, {});
-	res.end('Added new question: '+req.body.body);
+	db.collection('counters').findAndModify(
+	        {_id:'questions'}, 
+	        [], 
+	        {$inc : {next: 1}},
+	        true, 
+	        true,
+	        function(err, counter) {
+	                if (err) { throw new Error(err); }
+			var ins = { date: new Date(),
+				author: req.body.author, body: req.body.body,
+				tags: tags, tag_count: tagCount,
+				answers: [], votes: 0,
+				_id: counter.next
+			};
+			db.collection('questions').insert(ins, {});
+			res.end('Added new question: '+req.body.body);
+	        }   
+	);
 });
 
 // Read
 app.get('/question/:id.:format?', function(req, res) {
-//	eyes.inspect(req.params.id);
-//	var find = {_id: ObjectID(req.params.id)};
-//	eyes.inspect(find);
-	db.collection('questions').find({_id: ObjectID.createFromHexString(req.params.id)}).toArray(function(err, results) {
+	var idQuery = {};
+	if (isNumeric(req.params.id) ) {
+		idQuery = {_id: parseInt(req.params.id)};
+	} else {
+		if (/^[0-9a-fA-F]{24}$/.test(req.params.id)) {
+			console.log('regex ObjectID Match: '+req.params.id);
+			idQuery = {_id: ObjectID.createFromHexString(req.params.id)};
+		}
+		else {
+			idQuery = {_id: null};
+		}
+	}
+	db.collection('questions').find(idQuery).toArray(function(err, results) {
 		if (err) new Error(err);
-		eyes.inspect(results);
-		res.render('question', {
-			title: 'Question #'+req.params.id,
-			question: results[0]
-		
-		});
+
+		if (results.length > 0) {
+
+			res.render('question', {
+				title: 'Question #'+req.params.id,
+				question: results[0]
+			
+			});
+		} else {
+			res.render('error', {
+				title: 'No matching question',
+				error: 'Unable to find question #' + req.params.id
+			});
+		}
 	});
 
 });
