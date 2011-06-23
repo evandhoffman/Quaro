@@ -20,6 +20,10 @@ var strip = function(str) {
 	return str.replace(/^(\s*)((\S+\s*?)*)(\s*)$/,"$2");
 };
 
+var tagify = function(str) {
+	return strip(str).toLowerCase().replace(/'/g,'').replace(/[^a-zA-Z0-9]+/g,'-');
+};
+
 
 // Configuration
 
@@ -112,19 +116,25 @@ app.get('/question/new.:format?', function(req, res) {
 app.post('/question.:format?', function(req, res) {
 	// In a POST the params are in the req.body, not req.params.
 	var tags = [];
+	var tagCount = {};
 	if (req.body.tags.replace(/\s/,'').length > 0) {
 		tags = req.body.tags.split(',');
 	}
 	// Strip leading/trailing whitespace from each tag.
 	for (var i = tags.length-1 ; i >= 0 ; i--) { // iterate backwards so splice() works
-		tags[i] = strip(tags[i]);
+		tags[i] = tagify(tags[i]);
 		if (tags[i].length == 0) {
 			tags.splice(i,1);
+		} else {
+			tagCount[tags[i]] = 1;
 		}
 	}
+
+	eyes.inspect(tagCount);
 	var ins = { date: new Date(),
 		author: req.body.author, body: req.body.body,
-		tags: tags, answers: [], votes: 0
+		tags: tags, tag_count: tagCount,
+		answers: [], votes: 0
 		};
 //	res.send(JSON.stringify(ins));
 	db.collection('questions').insert(ins, {});
