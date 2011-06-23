@@ -13,6 +13,8 @@ var eyes = require('eyes');
 var app = module.exports = express.createServer();
 
 var mongo = require('mongoskin');
+//var ObjectID = require('mongodb').ObjectID;
+var ObjectID = require('mongodb/lib/mongodb/bson/bson').ObjectID
 var db = mongo.db('localhost:27017/questions');
 
 // Helpers
@@ -143,6 +145,19 @@ app.post('/question.:format?', function(req, res) {
 
 // Read
 app.get('/question/:id.:format?', function(req, res) {
+//	eyes.inspect(req.params.id);
+//	var find = {_id: ObjectID(req.params.id)};
+//	eyes.inspect(find);
+	db.collection('questions').find({_id: ObjectID.createFromHexString(req.params.id)}).toArray(function(err, results) {
+		if (err) new Error(err);
+		eyes.inspect(results);
+		res.render('question', {
+			title: 'Question #'+req.params.id,
+			question: results[0]
+		
+		});
+	});
+
 });
 
 // Update
