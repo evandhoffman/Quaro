@@ -3,6 +3,7 @@
 // Form stuff: http://japhr.blogspot.com/2010/08/jade-templating.html
 // findAndModify() syntax in mongoskin: http://groups.google.com/group/node-mongodb-native/browse_thread/thread/01e574c96782359b/c8c44d270135ea2e
 // Session stuff: http://dailyjs.com/2010/12/06/node-tutorial-5/
+// OpenID: https://github.com/havard/node-openid
 
 /**
  * Module dependencies.
