@@ -1,0 +1,15 @@
+h3= title
+h1 #{question.body}
+h6 
+	| Asked by #{question.author} on #{question.date}
+- if (question.answers !== undefined && question.answers.length > 0) 
+	ul
+	- each answer in question.answers
+		li 
+			b #{answer.body} 
+			| by #{answer.author} on #{answer.date}
+- else 
+	p No answers have been posted for this question.
+	
+		
+

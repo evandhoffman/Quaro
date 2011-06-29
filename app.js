@@ -233,6 +233,35 @@ app.get(/^\/question\/(\d+)(?:-(?:[^\/]*))?/, function(req, res) {
 
 });
 
+// Add-answer form:
+app.get('/answer/question/:id', function(req, res) {
+        var id = req.params.id;
+        if (isNumeric(id) ) { 
+                idQuery = {_id: parseInt(id)};
+        } else {
+                res.render('error', {
+                        title: 'Invalid question id: '+id,
+                        error: 'An invalid question id was provided: '+id
+                }); 
+        }   
+
+        db.collection('questions').find(idQuery).toArray(function(err, results) {
+                if (results.length > 0) {
+
+                        res.render('addanswer', {
+                                title: 'Question #'+id,
+                                question: results[0]
+
+                        });
+                } else {
+                        res.render('error', {
+                                title: 'No matching question',
+                                error: 'Unable to find question #' + id
+                        });
+                }
+	});
+});
+
 // Update
 app.put('/question/:id.:format?', function(req, res) {
 });
