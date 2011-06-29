@@ -2,7 +2,7 @@ h1= title
 ul
 - each question in questions
 	li 
-		a(href='/question/#{question._id}')= question.body  
+		a(href='/question/#{question._id}-#{question.stub}')= question.body  
 		p 
 			| Asked by #{question.author} on #{question.date}. Answers: #{question.answers.length}. Votes: #{question.votes}. 
 			- if(question.tags.length > 0) 

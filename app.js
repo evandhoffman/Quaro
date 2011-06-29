@@ -18,15 +18,21 @@ var app = module.exports = express.createServer();
 var mongo = require('mongoskin');
 var ObjectID = require('mongodb/lib/mongodb/bson/bson').ObjectID
 var db = mongo.db('localhost:27017/questions');
-var _ = require('underscore');
+//var _ = require('underscore');
 
 // Helpers
 var strip = function(str) {
-	return str.replace(/^(\s*)((\S+\s*?)*)(\s*)$/,"$2");
+	if (typeof(str) === 'string') {
+		return str.replace(/^(\s*)((\S+\s*?)*)(\s*)$/,"$2");
+	}
+	return str;
 };
 
 var tagify = function(str) {
-	return strip(str).toLowerCase().replace(/[^a-zA-Z0-9\s]+/g,'').replace(/[\s]+/g,'-');
+	if (typeof(str) === 'string') {
+		return strip(str).toLowerCase().replace(/[^a-zA-Z0-9\s]+/g,'').replace(/[\s]+/g,'-');
+	}
+	throw new Error("Can only tagify strings, not: "+str);
 };
 
 var isNumeric = function(str) {
@@ -34,6 +40,27 @@ var isNumeric = function(str) {
 		return true;
 	}
 	return (str === parseInt(str).toString());
+}
+
+// Given a string, return a string of the first "count" words.
+var subwords = function(str, count) {
+	var inStr = strip(str);
+	var wordArray = inStr.split(/\s+/);
+	if (wordArray.length <= count) {
+		return inStr;
+	}
+	var outStr = '';
+	for (var i = 0; i < count ; i++) {
+		outStr += wordArray[i];
+		if (i < count) {
+			outStr += ' ';
+		}
+	}
+	return outStr;
+}
+
+var stubify = function(str) {
+	return tagify(subwords(str, 10));
 }
 
 
@@ -143,6 +170,7 @@ app.post('/question.:format?', function(req, res) {
 		}
 	}
 
+
 	db.collection('counters').findAndModify(
 	        {_id:'questions'}, 
 	        [], 
@@ -150,11 +178,18 @@ app.post('/question.:format?', function(req, res) {
 	        true, 
 	        true,
 	        function(err, counter) {
-	                if (err) { throw new Error(err); }
-			var ins = { date: new Date(),
-				author: req.body.author, body: req.body.body,
-				tags: tags, tag_count: tagCount,
-				answers: [], votes: 0,
+	                if (err) { console.log(err); throw new Error(err); }
+		//	eyes.inspect(req.body.body);
+		//	console.log(req.body.body);
+			var ins = { 
+				date: new Date(),
+				author: req.body.author, 
+				body: req.body.body,
+				tags: tags, 
+				tag_count: tagCount,
+				answers: [], 
+				votes: 0,
+				stub: stubify(req.body.body),
 				_id: counter.next
 			};
 			db.collection('questions').insert(ins, {});
@@ -164,33 +199,34 @@ app.post('/question.:format?', function(req, res) {
 });
 
 // Read
-app.get('/question/:id.:format?', function(req, res) {
+//app.get('/question/:id(/.*)?', function(req, res) {
+app.get(/^\/question\/(\d+)(?:-(?:[^\/]*))?/, function(req, res) {
+//	eyes.inspect(req.params);
 	var idQuery = {};
-	if (isNumeric(req.params.id) ) {
-		idQuery = {_id: parseInt(req.params.id)};
+	var id = req.params[0];
+	if (isNumeric(id) ) {
+		idQuery = {_id: parseInt(id)};
 	} else {
-		if (/^[0-9a-fA-F]{24}$/.test(req.params.id)) {
-			console.log('regex ObjectID Match: '+req.params.id);
-			idQuery = {_id: ObjectID.createFromHexString(req.params.id)};
-		}
-		else {
-			idQuery = {_id: null};
-		}
+		res.render('error', {
+			title: 'Invalid question id: '+id,
+			error: 'An invalid question id was provided: '+id
+		});
 	}
+
 	db.collection('questions').find(idQuery).toArray(function(err, results) {
 		if (err) new Error(err);
 
 		if (results.length > 0) {
 
 			res.render('question', {
-				title: 'Question #'+req.params.id,
+				title: 'Question #'+id,
 				question: results[0]
 			
 			});
 		} else {
 			res.render('error', {
 				title: 'No matching question',
-				error: 'Unable to find question #' + req.params.id
+				error: 'Unable to find question #' + id
 			});
 		}
 	});
